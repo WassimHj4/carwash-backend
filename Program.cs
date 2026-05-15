@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Connection string: use DATABASE_URL env var on Render, fallback to appsettings
+// Connection string: prefer DATABASE_URL (Render/Railway), then individual PG* vars (Railway), then appsettings
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 string connectionString;
 if (!string.IsNullOrEmpty(databaseUrl))
@@ -15,6 +15,16 @@ if (!string.IsNullOrEmpty(databaseUrl))
     var database = uri.AbsolutePath.TrimStart('/');
     var username = Uri.UnescapeDataString(userInfo[0]);
     var password = Uri.UnescapeDataString(userInfo[1]);
+    connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+}
+else if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PGHOST")))
+{
+    // Railway individual PostgreSQL environment variables
+    var host = Environment.GetEnvironmentVariable("PGHOST");
+    var port = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
+    var database = Environment.GetEnvironmentVariable("PGDATABASE");
+    var username = Environment.GetEnvironmentVariable("PGUSER");
+    var password = Environment.GetEnvironmentVariable("PGPASSWORD");
     connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
 }
 else
